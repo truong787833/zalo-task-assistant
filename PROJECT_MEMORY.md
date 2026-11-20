@@ -44,6 +44,9 @@
   - File: `C:\Users\ADMIN\Desktop\MAKET CHIỀU\MA KÉT (1).pptx` (dung lượng ~1.3 MB).
   - Người nhận: `My Documents` (Cloud lưu trữ cá nhân trên Zalo Desktop).
   - Kết quả: **THÀNH CÔNG 100%**. Ứng dụng đã kích hoạt Zalo Desktop, mở cuộc trò chuyện My Documents, dán tin nhắn và đính kèm gửi trực tiếp file `MA KÉT (1).pptx`.
+- **2026-11-20 (Triển khai Render Cloud 24/7)**:
+  - Đã kết nối Render với tài khoản GitHub `truong787833`.
+  - Khởi tạo Git repo nội bộ, cấu hình `.gitignore`, chuẩn bị đẩy mã nguồn `zalo-task-assistant` lên GitHub để Render tự động build và chạy dịch vụ online 24/7.
 
 ---
 

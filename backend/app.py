@@ -44,14 +44,31 @@ def get_index():
         return FileResponse(index_file)
     return {"message": "ZaloTask Assistant API is running. Static index.html not found."}
 
+import time
+import asyncio
+
+BRIDGE_JOBS: dict = {}
+PC_HEARTBEAT: dict = {
+    "last_seen": 0,
+    "zalo_running": False,
+    "pc_name": ""
+}
+
 @app.get("/api/system-status")
 def get_system_status():
     zalo_running = False
-    if psutil is not None:
-        try:
-            zalo_running = any("zalo" in (p.info["name"] or "").lower() for p in psutil.process_iter(["name"]))
-        except Exception:
-            zalo_running = False
+    is_win = (os.name == 'nt')
+    if is_win:
+        if psutil is not None:
+            try:
+                zalo_running = any("zalo" in (p.info["name"] or "").lower() for p in psutil.process_iter(["name"]))
+            except Exception:
+                zalo_running = False
+    else:
+        # Khi chạy trên Cloud Linux: kiểm tra tín hiệu từ Máy tính Windows cá nhân
+        is_pc_online = (time.time() - PC_HEARTBEAT["last_seen"]) < 20
+        zalo_running = is_pc_online and PC_HEARTBEAT.get("zalo_running", False)
+
     return {
         "status": "online",
         "current_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -259,8 +276,79 @@ async def test_zalo_direct(
         "action_type": "zalo_all"
     }
     
-    res = zalo_dispatcher.dispatch_zalo_task(sim_task, dry_run=dry_run)
-    return {"success": res.get("success"), "result": res}
+    if os.name == 'nt':
+        res = zalo_dispatcher.dispatch_zalo_task(sim_task, dry_run=dry_run)
+        return {"success": res.get("success"), "result": res}
+    else:
+        # Chạy trên Cloud Linux -> Đẩy Job về Máy tính Windows của bạn qua Cầu Nối (Bridge)
+        import uuid
+        job_id = str(uuid.uuid4())
+        filename = os.path.basename(attachment_path) if attachment_path else ""
+        file_download_url = f"/api/files/download/{filename}" if filename else ""
+        now_str = datetime.now().strftime("%H:%M:%S")
+
+        job_data = {
+            "id": job_id,
+            "created_at": now_str,
+            "task": sim_task,
+            "file_url": file_download_url,
+            "filename": attachment_name or filename,
+            "status": "pending",
+            "logs": [
+                f"[{now_str}] [Điện thoại] Đã tiếp nhận yêu cầu gửi tới '{recipient}'",
+                f"[{now_str}] [Cloud] Đã đưa vào hàng đợi, chuyển tiếp tới Máy Tính của bạn..."
+            ]
+        }
+        BRIDGE_JOBS[job_id] = job_data
+
+        # Chờ tối đa 6 giây xem máy tính có gửi xong và phản hồi lại ngay không
+        start_wait = time.time()
+        while time.time() - start_wait < 6:
+            if BRIDGE_JOBS[job_id]["status"] == "completed":
+                break
+            await asyncio.sleep(0.5)
+
+        job = BRIDGE_JOBS[job_id]
+        if job["status"] == "completed":
+            return {"success": True, "result": job.get("result", {"logs": job["logs"]})}
+        else:
+            pc_online = (time.time() - PC_HEARTBEAT["last_seen"]) < 20
+            pc_status_note = "Máy tính đang kết nối, chuẩn bị thực hiện..." if pc_online else "Máy tính của bạn đang offline. Lệnh sẽ tự động thực hiện ngay khi bạn bật máy!"
+            return {
+                "success": True,
+                "result": {
+                    "logs": job["logs"] + [f"[{datetime.now().strftime('%H:%M:%S')}] {pc_status_note}"]
+                }
+            }
+
+@app.post("/api/bridge/heartbeat")
+def bridge_heartbeat(data: dict):
+    PC_HEARTBEAT["last_seen"] = time.time()
+    PC_HEARTBEAT["zalo_running"] = data.get("zalo_running", False)
+    PC_HEARTBEAT["pc_name"] = data.get("pc_name", "Windows PC")
+    return {"status": "ok", "server_time": time.time()}
+
+@app.get("/api/bridge/pending-jobs")
+def get_pending_jobs():
+    pending = [job for job in BRIDGE_JOBS.values() if job["status"] == "pending"]
+    return {"jobs": pending}
+
+@app.post("/api/bridge/complete-job/{job_id}")
+def complete_bridge_job(job_id: str, data: dict):
+    if job_id in BRIDGE_JOBS:
+        BRIDGE_JOBS[job_id]["status"] = "completed"
+        BRIDGE_JOBS[job_id]["result"] = data.get("result", {})
+        if "logs" in data:
+            BRIDGE_JOBS[job_id]["logs"].extend(data["logs"])
+        return {"status": "ok"}
+    return {"status": "not_found"}
+
+@app.get("/api/files/download/{filename}")
+def download_uploaded_file(filename: str):
+    file_path = os.path.join(UPLOAD_DIR, filename)
+    if os.path.exists(file_path):
+        return FileResponse(file_path, filename=filename)
+    raise HTTPException(status_code=404, detail="File không tồn tại trên Cloud")
 
 @app.get("/api/browse-directory")
 def test_browse_directory(path: str, pattern: str = "*.*"):

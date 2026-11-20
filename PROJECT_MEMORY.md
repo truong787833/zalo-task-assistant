@@ -56,6 +56,12 @@
   - Tích hợp thanh điều hướng dưới đáy (Mobile Bottom Navigation Bar) chuẩn ứng dụng di động.
   - Tích hợp Module Trợ lý AI 2 Chiều (`backend/ai_assistant.py`, endpoint `/api/ai-chat`): Cho phép chat, hỏi đáp việc cần làm hôm nay, tự động tạo lịch qua ngôn ngữ tự nhiên.
 
+- **2026-11-20 (Nâng cấp Cầu Nối Điện Thoại - Máy Tính: Cloud-to-Local Bridge)**:
+  - Giải quyết bài toán: Người dùng bấm gửi file từ điện thoại (trên Cloud Render), máy tính Windows tại nhà/cơ quan tự động nhận lệnh, tải file từ Cloud và kích hoạt Zalo Desktop dán gửi ngay lập tức.
+  - Xây dựng `backend/bridge_worker.py`: Gửi heartbeat định kỳ, quét các jobs đang chờ từ Cloud, tải file đính kèm và kích hoạt `zalo_dispatcher` gửi trực tiếp trên máy tính.
+  - Cập nhật endpoints trên Cloud: `/api/bridge/heartbeat`, `/api/bridge/pending-jobs`, `/api/bridge/complete-job/{job_id}`, `/api/files/download/{filename}`.
+  - Cập nhật trạng thái Zalo trên điện thoại: Tự động chuyển xanh `🟢 Zalo Desktop: Đã kết nối máy tính` khi máy tính online.
+
 ---
 
 ## 4. Danh Sách Tính Năng Hoàn Thành & Đang Hoạt Động Ổn Định
@@ -70,3 +76,4 @@
 9. [x] **Quản lý & Xem lịch sử (Execution Logs)**: Bảng thống kê chi tiết lượt gửi, thành công, thất bại và log chi tiết.
 10. [x] **Giao diện Web App Di Động Chuẩn APK (PWA)**: Thanh điều hướng đáy (Bottom Nav), manifest PWA, cài đặt vào màn hình chính điện thoại 1 chạm.
 11. [x] **Trợ Lý AI Trò Chuyện 2 Chiều (Chatbot Assistant)**: Nhận diện ngôn ngữ tự nhiên, tự tạo việc, liệt kê công việc, hướng dẫn sử dụng.
+12. [x] **Cầu Nối Đồng Bộ Điện Thoại - Máy Tính (Cloud-to-Local Bridge)**: Bấm gửi trên điện thoại ➡️ Máy tính nhận lệnh từ Cloud và tự động bắn Zalo Desktop.

@@ -32,5 +32,10 @@ if __name__ == "__main__":
     # Mở trình duyệt sau 1.5 giây
     threading.Thread(target=open_browser, args=(URL,), daemon=True).start()
 
+    # Khởi động Cầu nối Đồng bộ Cloud (Bridge Worker) để nhận lệnh từ Điện thoại
+    if os.name == 'nt':
+        from backend import bridge_worker
+        threading.Thread(target=bridge_worker.run_bridge_worker, daemon=True).start()
+
     from backend.app import app
     uvicorn.run(app, host=HOST, port=PORT, log_level="info")

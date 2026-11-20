@@ -95,7 +95,11 @@ def main():
     server_thread = threading.Thread(target=run_uvicorn_server, daemon=True)
     server_thread.start()
     
-    # 2. Mở trình duyệt Dashboard lần đầu
+    # 2. Khởi chạy Cầu Nối Cloud Đồng Bộ Với Điện Thoại (Bridge Worker)
+    from backend import bridge_worker
+    threading.Thread(target=bridge_worker.run_bridge_worker, daemon=True).start()
+
+    # 3. Mở trình duyệt Dashboard lần đầu
     threading.Thread(target=lambda: (time.sleep(1.2), open_dashboard()), daemon=True).start()
     
     # 3. Tạo Menu Khay Hệ Thống

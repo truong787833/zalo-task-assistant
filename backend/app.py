@@ -1,7 +1,11 @@
 import os
-import psutil
 from datetime import datetime
 from typing import Optional, List
+
+try:
+    import psutil
+except ImportError:
+    psutil = None
 
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.staticfiles import StaticFiles
@@ -41,7 +45,12 @@ def get_index():
 
 @app.get("/api/system-status")
 def get_system_status():
-    zalo_running = any("zalo" in (p.info["name"] or "").lower() for p in psutil.process_iter(["name"]))
+    zalo_running = False
+    if psutil is not None:
+        try:
+            zalo_running = any("zalo" in (p.info["name"] or "").lower() for p in psutil.process_iter(["name"]))
+        except Exception:
+            zalo_running = False
     return {
         "status": "online",
         "current_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),

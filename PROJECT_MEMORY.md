@@ -49,6 +49,7 @@
   - Khởi tạo Git repo nội bộ, cấu hình `.gitignore`.
   - Đã đẩy (git push) thành công 100% toàn bộ mã nguồn lên repository: `https://github.com/truong787833/zalo-task-assistant` (nhánh `main`).
   - Sẵn sàng cấu hình và deploy Web Service trên Render.com.
+  - Fix Deploy Render: Bổ sung `psutil>=6.0.0` vào `requirements.txt` và thêm cơ chế try/except phòng thủ cho import `psutil` trong `backend/app.py`.
 
 ---
 

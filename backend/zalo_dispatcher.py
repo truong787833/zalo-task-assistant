@@ -86,9 +86,22 @@ def format_message(template: str, task: Dict[str, Any]) -> str:
     msg = msg.replace("{title}", task.get("title", ""))
     return msg
 
-def get_zalo_window_info():
+def is_zalo_running() -> bool:
+    """
+    Kiểm tra nhanh xem tiến trình Zalo có đang chạy trên Windows không (không chạm vào cửa sổ).
+    """
+    if not is_windows():
+        return False
+    try:
+        import psutil
+        return any("zalo" in (p.info["name"] or "").lower() for p in psutil.process_iter(["name"]))
+    except Exception:
+        return False
+
+def get_zalo_window_info(bring_to_front: bool = True):
     """
     Tìm cửa sổ Zalo trên Default Desktop và lấy tọa độ RECT (chỉ trên Windows).
+    Chỉ đưa cửa sổ lên Foreground khi bring_to_front=True (khi thực sự gửi file).
     """
     if not is_windows():
         return None
@@ -124,18 +137,19 @@ def get_zalo_window_info():
         user32.EnumWindows(WNDENUMPROC(worker), 0)
 
         if zalo_hwnd:
-            fg_hwnd = user32.GetForegroundWindow()
-            cur_tid = kernel32.GetCurrentThreadId()
-            target_tid = user32.GetWindowThreadProcessId(zalo_hwnd, None)
-            fg_tid = user32.GetWindowThreadProcessId(fg_hwnd, None)
+            if bring_to_front:
+                fg_hwnd = user32.GetForegroundWindow()
+                cur_tid = kernel32.GetCurrentThreadId()
+                target_tid = user32.GetWindowThreadProcessId(zalo_hwnd, None)
+                fg_tid = user32.GetWindowThreadProcessId(fg_hwnd, None)
 
-            user32.AttachThreadInput(cur_tid, target_tid, True)
-            user32.AttachThreadInput(cur_tid, fg_tid, True)
-            user32.ShowWindow(zalo_hwnd, 9)
-            user32.SetForegroundWindow(zalo_hwnd)
-            user32.BringWindowToTop(zalo_hwnd)
-            user32.AttachThreadInput(cur_tid, target_tid, False)
-            user32.AttachThreadInput(cur_tid, fg_tid, False)
+                user32.AttachThreadInput(cur_tid, target_tid, True)
+                user32.AttachThreadInput(cur_tid, fg_tid, True)
+                user32.ShowWindow(zalo_hwnd, 9)
+                user32.SetForegroundWindow(zalo_hwnd)
+                user32.BringWindowToTop(zalo_hwnd)
+                user32.AttachThreadInput(cur_tid, target_tid, False)
+                user32.AttachThreadInput(cur_tid, fg_tid, False)
             
             return {
                 "hwnd": zalo_hwnd,

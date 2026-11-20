@@ -58,6 +58,7 @@
 
 - **2026-11-20 (Nâng cấp Cầu Nối Điện Thoại - Máy Tính: Cloud-to-Local Bridge)**:
   - Giải quyết bài toán: Người dùng bấm gửi file từ điện thoại (trên Cloud Render), máy tính Windows tại nhà/cơ quan tự động nhận lệnh, tải file từ Cloud và kích hoạt Zalo Desktop dán gửi ngay lập tức.
+  - Sửa cơ chế kiểm tra Zalo: Kiểm tra tiến trình bằng `psutil` yên lặng (`is_zalo_running()`) không kích hoạt cửa sổ Zalo lên Foreground mỗi 3s. Chỉ đưa Zalo lên khi thực sự có lệnh gửi file từ điện thoại.
   - Xây dựng `backend/bridge_worker.py`: Gửi heartbeat định kỳ, quét các jobs đang chờ từ Cloud, tải file đính kèm và kích hoạt `zalo_dispatcher` gửi trực tiếp trên máy tính.
   - Cập nhật endpoints trên Cloud: `/api/bridge/heartbeat`, `/api/bridge/pending-jobs`, `/api/bridge/complete-job/{job_id}`, `/api/files/download/{filename}`.
   - Cập nhật trạng thái Zalo trên điện thoại: Tự động chuyển xanh `🟢 Zalo Desktop: Đã kết nối máy tính` khi máy tính online.

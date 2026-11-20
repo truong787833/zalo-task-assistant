@@ -17,14 +17,14 @@ def run_bridge_worker(stop_event=None):
     """
     logger.info(f"Khởi động BridgeWorker kết nối tới Cloud: {CLOUD_URL}")
     os.makedirs(UPLOAD_DIR, exist_ok=True)
+    processed_jobs = set()
     
     while True:
         if stop_event and stop_event.is_set():
             break
         try:
-            # 1. Kiểm tra xem Zalo Desktop có đang chạy trên Windows không
-            zalo_info = zalo_dispatcher.get_zalo_window_info()
-            zalo_is_running = (zalo_info is not None)
+            # 1. Kiểm tra xem Zalo Desktop có đang chạy trên Windows không (chạy yên tĩnh không kéo focus cửa sổ)
+            zalo_is_running = zalo_dispatcher.is_zalo_running()
             
             # 2. Gửi Heartbeat lên Cloud
             try:
@@ -43,6 +43,10 @@ def run_bridge_worker(stop_event=None):
                     jobs = res.json().get("jobs", [])
                     for job in jobs:
                         job_id = job.get("id")
+                        if not job_id or job_id in processed_jobs:
+                            continue
+                        
+                        processed_jobs.add(job_id)
                         task = job.get("task", {})
                         file_url = job.get("file_url")
                         filename = job.get("filename")
@@ -63,7 +67,7 @@ def run_bridge_worker(stop_event=None):
                             except Exception as dl_err:
                                 logger.error(f"Lỗi tải file từ cloud: {dl_err}")
 
-                        # Thực thi gửi trực tiếp trên Zalo Desktop
+                        # Thực thi gửi trực tiếp trên Zalo Desktop (chỉ khi có lệnh mới đưa Zalo lên)
                         dispatch_res = zalo_dispatcher.dispatch_zalo_task(task)
                         
                         # Báo cáo hoàn thành lên Cloud

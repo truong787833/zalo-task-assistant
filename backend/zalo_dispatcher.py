@@ -253,8 +253,17 @@ def dispatch_zalo_task(task: Dict[str, Any], dry_run: bool = False, telegram_con
     try:
         import pyautogui
         import pyperclip
+        import ctypes
         ensure_default_desktop()
         
+        # Ghi nhớ cửa sổ người dùng đang làm việc trước khi gửi
+        prev_hwnd = 0
+        if hasattr(ctypes, 'windll'):
+            try:
+                prev_hwnd = ctypes.windll.user32.GetForegroundWindow()
+            except Exception:
+                prev_hwnd = 0
+
         # Bước 1: Kích hoạt Zalo và lấy tọa độ chính xác
         logs.append("Đang kích hoạt ứng dụng Zalo Desktop...")
         zalo_info = get_zalo_window_info()
@@ -335,6 +344,19 @@ def dispatch_zalo_task(task: Dict[str, Any], dry_run: bool = False, telegram_con
             )
             send_telegram_notification(telegram_config["token"], telegram_config["chat_id"], tele_msg)
             logs.append("Đã gửi tin nhắn báo cáo kết quả về điện thoại (Telegram).")
+
+        # Bước 8: Tự động thu nhỏ Zalo và trả lại màn hình làm việc dở dang
+        if zalo_info and zalo_info.get("hwnd") and hasattr(ctypes, 'windll'):
+            try:
+                time.sleep(0.5)
+                u32 = ctypes.windll.user32
+                u32.ShowWindow(zalo_info["hwnd"], 6)  # SW_MINIMIZE = 6
+                logs.append("Đã tự động thu nhỏ Zalo xuống góc màn hình.")
+                if prev_hwnd and prev_hwnd != zalo_info["hwnd"]:
+                    u32.SetForegroundWindow(prev_hwnd)
+                    logs.append("Đã khôi phục lại màn hình làm việc trước đó cho bạn.")
+            except Exception as min_err:
+                logger.debug(f"Lỗi khôi phục cửa sổ cũ: {min_err}")
             
         return {"success": True, "logs": logs, "resolved_file": attachment_path}
         

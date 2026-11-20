@@ -78,3 +78,4 @@
 10. [x] **Giao diện Web App Di Động Chuẩn APK (PWA)**: Thanh điều hướng đáy (Bottom Nav), manifest PWA, cài đặt vào màn hình chính điện thoại 1 chạm.
 11. [x] **Trợ Lý AI Trò Chuyện 2 Chiều (Chatbot Assistant)**: Nhận diện ngôn ngữ tự nhiên, tự tạo việc, liệt kê công việc, hướng dẫn sử dụng.
 12. [x] **Cầu Nối Đồng Bộ Điện Thoại - Máy Tính (Cloud-to-Local Bridge)**: Bấm gửi trên điện thoại ➡️ Máy tính nhận lệnh từ Cloud và tự động bắn Zalo Desktop.
+13. [x] **Tự Động Thu Nhỏ & Khôi Phục Cửa Sổ Làm Việc (Auto-Restore Screen)**: Ghi nhớ cửa sổ người dùng đang làm việc trước khi gửi, dán gửi xong lập tức thu nhỏ Zalo xuống Taskbar và trả lại tiêu điểm màn hình cho người dùng, không làm gián đoạn công việc.

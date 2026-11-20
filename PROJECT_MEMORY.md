@@ -51,6 +51,10 @@
   - Sẵn sàng cấu hình và deploy Web Service trên Render.com.
   - Fix Deploy Render: Bổ sung `psutil>=6.0.0` vào `requirements.txt` và thêm cơ chế try/except phòng thủ cho import `psutil` trong `backend/app.py`.
   - Triển khai thành công 100%: Render đã build xong và dịch vụ đã LIVE trực tuyến (`zalo-task-assistant is live!`).
+- **2026-11-20 (Nâng cấp Giao diện Mobile Web App chuẩn APK & Bot AI 2 chiều)**:
+  - Bổ sung cấu hình PWA (`manifest.json`, icon-192, icon-512) để người dùng có thể "Thêm vào màn hình chính" trên điện thoại và dùng full màn hình như 1 app APK thực thụ, siêu nhẹ.
+  - Tích hợp thanh điều hướng dưới đáy (Mobile Bottom Navigation Bar) chuẩn ứng dụng di động.
+  - Tích hợp Module Trợ lý AI 2 Chiều (`backend/ai_assistant.py`, endpoint `/api/ai-chat`): Cho phép chat, hỏi đáp việc cần làm hôm nay, tự động tạo lịch qua ngôn ngữ tự nhiên.
 
 ---
 
@@ -64,3 +68,5 @@
 7. [x] **Chạy ngầm ở Khay Hệ Thống (System Tray)**: `tray.py` + `start_silent.vbs` ẩn hoàn toàn cửa sổ đen cmd, điều khiển qua menu khay hệ thống.
 8. [x] **Tự khởi động cùng Windows**: Tích hợp trực tiếp vào Registry `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`.
 9. [x] **Quản lý & Xem lịch sử (Execution Logs)**: Bảng thống kê chi tiết lượt gửi, thành công, thất bại và log chi tiết.
+10. [x] **Giao diện Web App Di Động Chuẩn APK (PWA)**: Thanh điều hướng đáy (Bottom Nav), manifest PWA, cài đặt vào màn hình chính điện thoại 1 chạm.
+11. [x] **Trợ Lý AI Trò Chuyện 2 Chiều (Chatbot Assistant)**: Nhận diện ngôn ngữ tự nhiên, tự tạo việc, liệt kê công việc, hướng dẫn sử dụng.

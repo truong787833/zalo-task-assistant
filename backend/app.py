@@ -15,6 +15,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from . import database
 from . import file_manager
 from . import zalo_dispatcher
+from . import ai_assistant
 from .scheduler_engine import scheduler
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -310,3 +311,9 @@ def test_telegram_connection(bot_token: str = Form(...), chat_id: str = Form(...
         "success": success,
         "message": "Đã gửi tin nhắn test đến Telegram thành công!" if success else "Gửi thất bại. Vui lòng kiểm tra lại Bot Token hoặc Chat ID!"
     }
+
+@app.post("/api/ai-chat")
+def handle_ai_chat(data: dict):
+    user_msg = data.get("message", "")
+    return ai_assistant.process_chat_message(user_msg)
+

@@ -2,8 +2,14 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ZaloTask Assistant - Lập lịch, Nhắc việc & Gửi File Zalo Tự Động</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ZaloTask Assistant - Trợ Lý Nhắc Việc & Gửi Zalo</title>
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="theme-color" content="#4f46e5">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="ZaloTask">
+    <link rel="apple-touch-icon" href="/static/icon-192.png">
     <link rel="stylesheet" href="/static/style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -72,16 +78,19 @@
         <!-- Navigation Tabs -->
         <div class="tabs-nav">
             <button class="tab-btn active" data-tab="tab-tasks">
-                <span>📅</span> Danh Sách Lịch Nhắc & Gửi Zalo
+                <span>📅</span> Lịch Nhắc Việc
+            </button>
+            <button class="tab-btn" data-tab="tab-ai-chat">
+                <span>💬</span> Trợ Lý AI (Chat 2 Chiều)
             </button>
             <button class="tab-btn" data-tab="tab-quick-test">
-                <span>🚀</span> Thử Nghiệm Gửi Nhanh Zalo
+                <span>🚀</span> Thử Gửi Zalo
             </button>
             <button class="tab-btn" data-tab="tab-logs">
-                <span>📜</span> Lịch Sử Thực Thi
+                <span>📜</span> Lịch Sử
             </button>
             <button class="tab-btn" data-tab="tab-settings">
-                <span>⚙</span> Cài Đặt & Báo Về Điện Thoại
+                <span>⚙</span> Cài Đặt & Điện Thoại
             </button>
             <div class="tab-actions">
                 <button class="btn btn-primary" id="open-create-modal-btn">
@@ -97,6 +106,46 @@
                     <div class="spinner"></div>
                     <p>Đang tải danh sách tác vụ...</p>
                 </div>
+            </div>
+        </section>
+
+        <!-- TAB: AI Chat (Trợ lý 2 chiều) -->
+        <section class="tab-content" id="tab-ai-chat">
+            <div class="card chat-card">
+                <div class="card-header chat-header">
+                    <div class="chat-header-title">
+                        <span class="chat-avatar-ai">🤖</span>
+                        <div>
+                            <h2>Trợ Lý AI Nhắc Việc (2 Chiều)</h2>
+                            <p class="subtitle">Ra lệnh tiếng Việt tự nhiên để tạo việc, tra cứu lịch hoặc hỏi đáp</p>
+                        </div>
+                    </div>
+                    <button class="btn btn-sm btn-outline" id="btn-clear-chat" type="button">Làm mới chat</button>
+                </div>
+                
+                <div class="chat-messages-container" id="chat-messages">
+                    <div class="chat-message ai-message">
+                        <div class="msg-avatar">🤖</div>
+                        <div class="msg-bubble">
+                            <p>Xin chào! Tôi là Trợ lý AI của bạn. Bạn có thể trò chuyện với tôi hoặc ra lệnh bất kỳ lúc nào.</p>
+                            <p style="margin-top: 6px; font-size: 0.9em; opacity: 0.85;">Bạn có thể bấm các gợi ý nhanh bên dưới hoặc tự gõ câu lệnh:</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chat-quick-suggestions">
+                    <button type="button" class="suggestion-chip" data-text="Hôm nay có việc gì?">📋 Hôm nay có việc gì?</button>
+                    <button type="button" class="suggestion-chip" data-text="Nhắc tôi nộp báo cáo lúc 16:30">⏰ Nhắc tôi nộp báo cáo lúc 16:30</button>
+                    <button type="button" class="suggestion-chip" data-text="Cách cài đặt lên điện thoại">📲 Cài app lên điện thoại</button>
+                    <button type="button" class="suggestion-chip" data-text="Kiểm tra trạng thái máy tính">🖥️ Trạng thái máy tính</button>
+                </div>
+
+                <form id="chat-input-form" class="chat-input-area">
+                    <input type="text" id="chat-input-text" class="chat-input-field" placeholder="Nhắn tin cho trợ lý AI (VD: Nhắc tôi lúc 16:30 nộp file...)" autocomplete="off">
+                    <button type="submit" class="btn btn-primary btn-chat-send" id="btn-chat-send">
+                        <span>Gửi</span> ➔
+                    </button>
+                </form>
             </div>
         </section>
 
@@ -223,6 +272,24 @@
                     <div class="form-actions full-width" style="display: flex; gap: 12px; margin-top: 10px;">
                         <button type="button" class="btn btn-primary" id="btn-save-settings">💾 Lưu Cài Đặt</button>
                         <button type="button" class="btn btn-outline" id="btn-test-telegram">🔔 Gửi Tin Nhắn Thử Nghiệm Về Điện Thoại</button>
+                    </div>
+                </div>
+
+                <div class="divider"></div>
+
+                <div class="card-header">
+                    <h2>📲 Cài Đặt Lên Màn Hình Điện Thoại (Dùng Như App APK)</h2>
+                    <p>Chỉ cần 3 bước đơn giản để biến trang web thành ứng dụng điện thoại độc lập, cực nhẹ và mở full màn hình không tốn dung lượng</p>
+                </div>
+                <div class="system-guide-box">
+                    <div class="guide-item">
+                        <b>Bước 1:</b> Mở trang web này trên trình duyệt điện thoại (Chrome, Cốc Cốc, hoặc Safari).
+                    </div>
+                    <div class="guide-item">
+                        <b>Bước 2:</b> Bấm vào nút menu <b>(⋮)</b> ở góc trên bên phải trình duyệt.
+                    </div>
+                    <div class="guide-item">
+                        <b>Bước 3:</b> Chọn <b>"Thêm vào Màn hình chính"</b> (hoặc <i>"Cài đặt ứng dụng"</i>). Biểu tượng ZaloTask sẽ xuất hiện ngay trên màn hình như app tải từ CH Play!
                     </div>
                 </div>
 
@@ -438,6 +505,26 @@
             <button class="btn btn-sm btn-light" id="btn-dismiss-alert">Đã rõ</button>
         </div>
     </div>
+
+    <!-- MOBILE BOTTOM NAVIGATION (Thanh điều hướng kiểu App Android/iOS) -->
+    <nav class="mobile-bottom-nav">
+        <button class="bottom-nav-item active" data-tab="tab-tasks">
+            <span class="nav-icon">📅</span>
+            <span class="nav-label">Nhắc việc</span>
+        </button>
+        <button class="bottom-nav-item" data-tab="tab-ai-chat">
+            <span class="nav-icon">💬</span>
+            <span class="nav-label">Trợ lý AI</span>
+        </button>
+        <button class="bottom-nav-item" data-tab="tab-quick-test">
+            <span class="nav-icon">🚀</span>
+            <span class="nav-label">Gửi Zalo</span>
+        </button>
+        <button class="bottom-nav-item" data-tab="tab-settings">
+            <span class="nav-icon">⚙️</span>
+            <span class="nav-label">Cài đặt</span>
+        </button>
+    </nav>
 
     <script src="/static/app.js"></script>
 </body>

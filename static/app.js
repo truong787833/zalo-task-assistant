@@ -85,18 +85,30 @@ document.addEventListener("DOMContentLoaded", () => {
         if (soundEnabled) playChimeSound();
     });
 
-    // Tabs
-    const tabBtns = document.querySelectorAll(".tab-btn");
-    tabBtns.forEach(btn => {
+    // Unified Tabs & Mobile Bottom Navigation
+    window.switchTab = function(target) {
+        document.querySelectorAll(".tab-btn").forEach(b => {
+            b.classList.toggle("active", b.dataset.tab === target);
+        });
+        document.querySelectorAll(".bottom-nav-item").forEach(b => {
+            b.classList.toggle("active", b.dataset.tab === target);
+        });
+        document.querySelectorAll(".tab-content").forEach(c => {
+            c.classList.toggle("active", c.id === target);
+        });
+
+        if (target === "tab-logs") loadLogs();
+        if (target === "tab-settings") loadSettings();
+        if (target === "tab-ai-chat") {
+            const input = document.getElementById("chat-input-text");
+            if (input) input.focus();
+        }
+    };
+
+    document.querySelectorAll(".tab-btn, .bottom-nav-item").forEach(btn => {
         btn.addEventListener("click", () => {
             const target = btn.dataset.tab;
-            tabBtns.forEach(b => b.classList.remove("active"));
-            document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
-            btn.classList.add("active");
-            document.getElementById(target).classList.add("active");
-
-            if (target === "tab-logs") loadLogs();
-            if (target === "tab-settings") loadSettings();
+            if (target) switchTab(target);
         });
     });
 
@@ -176,6 +188,7 @@ document.addEventListener("DOMContentLoaded", () => {
     loadTasks();
     loadLogs();
     loadSettings();
+    initAIChat();
 
     setInterval(checkAlerts, 3000);
     setInterval(loadSystemStatus, 10000);
@@ -749,4 +762,95 @@ function escapeHtml(text) {
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
+}
+
+// ============================================================
+// AI CHAT 2 CHIỀU LOGIC
+// ============================================================
+function initAIChat() {
+    const chatForm = document.getElementById("chat-input-form");
+    const chatInput = document.getElementById("chat-input-text");
+    const chatMessages = document.getElementById("chat-messages");
+    const clearBtn = document.getElementById("btn-clear-chat");
+    const suggestionChips = document.querySelectorAll(".suggestion-chip");
+
+    if (!chatForm || !chatInput || !chatMessages) return;
+
+    async function sendChatMessage(userText) {
+        const text = userText || chatInput.value.trim();
+        if (!text) return;
+
+        appendMessageBubble("user", escapeHtml(text));
+        chatInput.value = "";
+
+        const thinkingId = "thinking-" + Date.now();
+        const thinkingBubble = document.createElement("div");
+        thinkingBubble.className = "chat-message ai-message";
+        thinkingBubble.id = thinkingId;
+        thinkingBubble.innerHTML = `
+            <div class="msg-avatar">🤖</div>
+            <div class="msg-bubble"><i>Trợ lý đang xử lý câu lệnh...</i></div>
+        `;
+        chatMessages.appendChild(thinkingBubble);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+
+        try {
+            const res = await fetch("/api/ai-chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ message: text })
+            });
+            const data = await res.json();
+
+            const thinkingEl = document.getElementById(thinkingId);
+            if (thinkingEl) thinkingEl.remove();
+
+            appendMessageBubble("ai", data.reply);
+
+            if (data.action === "task_created") {
+                playChimeSound();
+                loadTasks();
+            }
+        } catch (err) {
+            const thinkingEl = document.getElementById(thinkingId);
+            if (thinkingEl) thinkingEl.remove();
+            appendMessageBubble("ai", "Xin lỗi, đã xảy ra lỗi kết nối: " + err);
+        }
+    }
+
+    function appendMessageBubble(sender, htmlContent) {
+        const msgDiv = document.createElement("div");
+        msgDiv.className = `chat-message ${sender}-message`;
+        msgDiv.innerHTML = `
+            <div class="msg-avatar">${sender === 'ai' ? '🤖' : '👤'}</div>
+            <div class="msg-bubble">${htmlContent}</div>
+        `;
+        chatMessages.appendChild(msgDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    chatForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        sendChatMessage();
+    });
+
+    suggestionChips.forEach(chip => {
+        chip.addEventListener("click", () => {
+            const text = chip.dataset.text || chip.innerText.trim();
+            sendChatMessage(text);
+        });
+    });
+
+    if (clearBtn) {
+        clearBtn.addEventListener("click", () => {
+            chatMessages.innerHTML = `
+                <div class="chat-message ai-message">
+                    <div class="msg-avatar">🤖</div>
+                    <div class="msg-bubble">
+                        <p>Đoạn chat đã được làm mới! Bạn cần tôi giúp gì?</p>
+                    </div>
+                </div>
+            `;
+        });
+    }
 }

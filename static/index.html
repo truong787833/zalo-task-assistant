@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZaloTask Assistant - Lập lịch, Nhắc việc & Gửi File Zalo Tự Động</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Header -->
+    <header class="app-header">
+        <div class="header-container">
+            <div class="logo-area">
+                <div class="logo-icon">🔔</div>
+                <div>
+                    <h1>ZaloTask Assistant <span class="version-tag">Pro v1.1</span></h1>
+                    <p class="subtitle">Lập lịch nhắc nhở • Tự bốc file mới • Gửi Zalo • Báo cáo về điện thoại</p>
+                </div>
+            </div>
+            <div class="header-status-area">
+                <div class="status-badge" id="scheduler-badge">
+                    <span class="dot green"></span> Bộ lập lịch: <b id="scheduler-status-text">Đang chạy</b>
+                </div>
+                <div class="status-badge" id="zalo-badge">
+                    <span class="dot green" id="zalo-dot"></span> Zalo Desktop: <b id="zalo-status-text">Đang kiểm tra...</b>
+                </div>
+                <div class="clock-display" id="clock-display">--:--:--</div>
+                <button class="sound-toggle-btn" id="sound-toggle-btn" title="Bật/Tắt chuông nhắc">
+                    <span id="sound-icon">🔊</span> Chuông: <b id="sound-status-text">Bật</b>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="main-container">
+        <!-- Stats Row -->
+        <section class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon bg-blue">📋</div>
+                <div class="stat-info">
+                    <span class="stat-label">Tổng tác vụ</span>
+                    <h3 class="stat-value" id="stat-total">0</h3>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon bg-green">⚡</div>
+                <div class="stat-info">
+                    <span class="stat-label">Đang kích hoạt</span>
+                    <h3 class="stat-value" id="stat-active">0</h3>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon bg-purple">⏰</div>
+                <div class="stat-info">
+                    <span class="stat-label">Lần chạy kế tiếp</span>
+                    <h3 class="stat-value stat-small" id="stat-next-run">--:--</h3>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon bg-orange">📤</div>
+                <div class="stat-info">
+                    <span class="stat-label">Lượt gửi thành công</span>
+                    <h3 class="stat-value" id="stat-success-runs">0</h3>
+                </div>
+            </div>
+        </section>
+
+        <!-- Navigation Tabs -->
+        <div class="tabs-nav">
+            <button class="tab-btn active" data-tab="tab-tasks">
+                <span>📅</span> Danh Sách Lịch Nhắc & Gửi Zalo
+            </button>
+            <button class="tab-btn" data-tab="tab-quick-test">
+                <span>🚀</span> Thử Nghiệm Gửi Nhanh Zalo
+            </button>
+            <button class="tab-btn" data-tab="tab-logs">
+                <span>📜</span> Lịch Sử Thực Thi
+            </button>
+            <button class="tab-btn" data-tab="tab-settings">
+                <span>⚙</span> Cài Đặt & Báo Về Điện Thoại
+            </button>
+            <div class="tab-actions">
+                <button class="btn btn-primary" id="open-create-modal-btn">
+                    <span>➕</span> Thêm Tác Vụ Mới
+                </button>
+            </div>
+        </div>
+
+        <!-- TAB 1: Task List -->
+        <section class="tab-content active" id="tab-tasks">
+            <div class="tasks-container" id="tasks-container">
+                <div class="empty-state" id="tasks-loading">
+                    <div class="spinner"></div>
+                    <p>Đang tải danh sách tác vụ...</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 2: Quick Test -->
+        <section class="tab-content" id="tab-quick-test">
+            <div class="card test-card">
+                <div class="card-header">
+                    <h2>🚀 Thử Nghiệm Gửi Trực Tiếp Qua Zalo</h2>
+                    <p>Kiểm tra tính năng tự động tìm người nhận, dán tin nhắn và gửi file hoặc quét file mới nhất</p>
+                </div>
+                <form id="quick-test-form" class="form-grid">
+                    <div class="form-group full-width">
+                        <label for="test-recipient">Tên người nhận hoặc Tên nhóm trên Zalo <span class="required">*</span></label>
+                        <input type="text" id="test-recipient" class="form-control" placeholder="Ví dụ: Nguyễn Văn A hoặc Nhóm Dự Án" required>
+                        <small class="form-hint">Nhập chính xác tên như hiển thị trong danh bạ hoặc tìm kiếm Zalo</small>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label for="test-message">Nội dung tin nhắn</label>
+                        <textarea id="test-message" class="form-control" rows="3" placeholder="Nhập tin nhắn thử nghiệm..."></textarea>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label>Chọn nguồn tài liệu / file đính kèm:</label>
+                        <div class="radio-toggle-group">
+                            <label class="radio-option">
+                                <input type="radio" name="test-file-mode" value="fixed" checked>
+                                <span>Tải lên file trực tiếp</span>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="test-file-mode" value="directory">
+                                <span>Tự động quét bốc file mới nhất trong thư mục</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-group full-width" id="test-file-upload-block">
+                        <label for="test-file">Chọn File / Ảnh đính kèm</label>
+                        <input type="file" id="test-file" class="form-control">
+                    </div>
+
+                    <div class="form-group full-width" id="test-file-dir-block" style="display: none;">
+                        <label for="test-dir-path">Đường dẫn thư mục máy tính:</label>
+                        <div class="input-with-btn">
+                            <input type="text" id="test-dir-path" class="form-control" placeholder="Ví dụ: C:\Users\ADMIN\Documents hoặc D:\BaoCao">
+                            <button type="button" class="btn btn-secondary" id="btn-browse-test-dir">🔍 Quét thử</button>
+                        </div>
+                        <div id="test-dir-preview" class="dir-preview-result"></div>
+                    </div>
+
+                    <div class="form-group full-width form-checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="test-dry-run">
+                            <span>Chế độ mô phỏng (Dry-run / Chỉ kiểm tra tham số, không bấm gửi thật)</span>
+                        </label>
+                    </div>
+
+                    <div class="form-actions full-width">
+                        <button type="submit" class="btn btn-success btn-large" id="btn-run-quick-test">
+                            <span>📤</span> Bấm Gửi Thử Ngay Qua Zalo
+                        </button>
+                    </div>
+                </form>
+
+                <div class="test-result-box" id="test-result-box" style="display: none;">
+                    <h3>Kết quả thực thi:</h3>
+                    <pre id="test-result-logs"></pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 3: Logs -->
+        <section class="tab-content" id="tab-logs">
+            <div class="card">
+                <div class="card-header flex-between">
+                    <div>
+                        <h2>📜 Lịch Sử Thực Thi Gần Nhất</h2>
+                        <p>Theo dõi trạng thái các lần nhắc việc và gửi tài liệu Zalo</p>
+                    </div>
+                    <button class="btn btn-outline" id="btn-refresh-logs">🔄 Làm mới</button>
+                </div>
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Thời gian</th>
+                                <th>Tên tác vụ</th>
+                                <th>Người nhận Zalo</th>
+                                <th>Trạng thái</th>
+                                <th>File gửi</th>
+                                <th>Chi tiết thực thi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="logs-tbody">
+                            <tr>
+                                <td colspan="6" class="text-center">Đang tải lịch sử...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 4: Settings & Phone Notifications -->
+        <section class="tab-content" id="tab-settings">
+            <div class="card">
+                <div class="card-header">
+                    <h2>📱 Nhận Báo Cáo Kết Quả Về Điện Thoại (Telegram)</h2>
+                    <p>Mỗi khi ứng dụng gửi xong một file hoặc báo cáo qua Zalo, nó sẽ tự động gửi thông báo xác nhận về điện thoại của bạn</p>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group full-width">
+                        <label for="setting-tele-token">Telegram Bot Token</label>
+                        <input type="text" id="setting-tele-token" class="form-control" placeholder="Ví dụ: 123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ">
+                        <small class="form-hint">Mở Telegram, chat với <b>@BotFather</b> gửi lệnh <code>/newbot</code> để tạo bot miễn phí và nhận Token</small>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label for="setting-tele-chat">Telegram Chat ID (ID tài khoản của bạn)</label>
+                        <input type="text" id="setting-tele-chat" class="form-control" placeholder="Ví dụ: 987654321">
+                        <small class="form-hint">Mở Telegram, chat với <b>@userinfobot</b> để xem ID số của bạn</small>
+                    </div>
+
+                    <div class="form-actions full-width" style="display: flex; gap: 12px; margin-top: 10px;">
+                        <button type="button" class="btn btn-primary" id="btn-save-settings">💾 Lưu Cài Đặt</button>
+                        <button type="button" class="btn btn-outline" id="btn-test-telegram">🔔 Gửi Tin Nhắn Thử Nghiệm Về Điện Thoại</button>
+                    </div>
+                </div>
+
+                <div class="divider"></div>
+
+                <div class="card-header">
+                    <h2>🚀 Khởi Động & Chạy Ngầm Windows</h2>
+                    <p>Quản lý cách ứng dụng khởi động và hoạt động trên máy tính của bạn</p>
+                </div>
+                <div class="system-guide-box">
+                    <div class="guide-item">
+                        <b>1. Chạy ngầm ở Khay hệ thống (System Tray):</b>
+                        <p>Nhấp đúp chuột vào file <code>start_tray.bat</code> hoặc <code>start_silent.vbs</code> để ứng dụng thu nhỏ hoàn toàn xuống góc phải thanh taskbar, không còn cửa sổ màu đen CMD.</p>
+                    </div>
+                    <div class="guide-item">
+                        <b>2. Tự khởi động cùng máy tính Windows:</b>
+                        <p>Nhấp chuột phải vào biểu tượng quả chuông ở Khay hệ thống và chọn <b>"Khởi Động Cùng Windows"</b> để phần mềm tự động chạy ngầm mỗi khi bạn bật máy.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal: Tạo / Chỉnh Sửa Tác Vụ -->
+    <div class="modal-backdrop" id="task-modal">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <h3 id="modal-title">➕ Tạo Tác Vụ Mới</h3>
+                <button class="modal-close-btn" id="modal-close-btn">&times;</button>
+            </div>
+            <form id="task-form">
+                <input type="hidden" id="form-task-id" value="">
+                
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="form-title">Tên việc cần nhắc / gửi <span class="required">*</span></label>
+                        <input type="text" id="form-title" class="form-control" placeholder="Ví dụ: Gửi báo cáo doanh thu tuần" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="form-desc">Mô tả / Ghi chú</label>
+                        <input type="text" id="form-desc" class="form-control" placeholder="Ghi chú thêm về nội dung công việc">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group col-half">
+                            <label for="form-schedule-type">Kiểu lịch trình <span class="required">*</span></label>
+                            <select id="form-schedule-type" class="form-control">
+                                <option value="daily">Hàng ngày (Daily)</option>
+                                <option value="weekly">Hàng tuần (Weekly - chọn thứ)</option>
+                                <option value="interval">Lặp lại định kỳ (Mỗi X phút)</option>
+                                <option value="once">Chỉ một lần duy nhất</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group col-half" id="group-schedule-time">
+                            <label for="form-schedule-time">Giờ nhắc (HH:MM) <span class="required">*</span></label>
+                            <input type="time" id="form-schedule-time" class="form-control" value="08:30">
+                        </div>
+                    </div>
+
+                    <div class="form-group" id="group-weekly-days" style="display: none;">
+                        <label>Chọn các ngày trong tuần:</label>
+                        <div class="days-selector">
+                            <label class="day-chip"><input type="checkbox" name="days" value="0"> T2</label>
+                            <label class="day-chip"><input type="checkbox" name="days" value="1"> T3</label>
+                            <label class="day-chip"><input type="checkbox" name="days" value="2"> T4</label>
+                            <label class="day-chip"><input type="checkbox" name="days" value="3"> T5</label>
+                            <label class="day-chip"><input type="checkbox" name="days" value="4"> T6</label>
+                            <label class="day-chip"><input type="checkbox" name="days" value="5"> T7</label>
+                            <label class="day-chip"><input type="checkbox" name="days" value="6"> CN</label>
+                        </div>
+                    </div>
+
+                    <div class="form-group" id="group-interval" style="display: none;">
+                        <label for="form-interval-minutes">Nhắc lại sau mỗi (Số phút):</label>
+                        <input type="number" id="form-interval-minutes" class="form-control" value="60" min="1">
+                    </div>
+
+                    <div class="form-group" id="group-once-datetime" style="display: none;">
+                        <label for="form-once-datetime">Ngày và giờ kích hoạt:</label>
+                        <input type="datetime-local" id="form-once-datetime" class="form-control">
+                    </div>
+
+                    <div class="divider"></div>
+
+                    <div class="form-group">
+                        <label for="form-action-type">Hành động khi đến giờ <span class="required">*</span></label>
+                        <select id="form-action-type" class="form-control">
+                            <option value="zalo_all">Gửi cả tin nhắn & File qua Zalo</option>
+                            <option value="zalo_file">Chỉ gửi File qua Zalo</option>
+                            <option value="zalo_msg">Chỉ gửi Tin nhắn văn bản qua Zalo</option>
+                            <option value="alert_only">Chỉ bật chuông & thông báo nhắc việc (Không gửi Zalo)</option>
+                        </select>
+                    </div>
+
+                    <div id="zalo-options-block">
+                        <div class="form-group">
+                            <label for="form-recipient">Tên người nhận hoặc Nhóm Zalo <span class="required">*</span></label>
+                            <input type="text" id="form-recipient" class="form-control" placeholder="Tên chính xác trên Zalo (ví dụ: Trần Thị B, Nhóm Báo Cáo)">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="form-message">Nội dung tin nhắn Zalo</label>
+                            <textarea id="form-message" class="form-control" rows="2" placeholder="Chào bạn, đây là file báo cáo ngày {date}..."></textarea>
+                            <small class="form-hint">Hỗ trợ biến động: <code>{date}</code> (ngày), <code>{time}</code> (giờ), <code>{day_of_week}</code> (thứ)</small>
+                        </div>
+
+                        <!-- CHỌN NGUỒN FILE: Cố định vs Bốc file mới nhất -->
+                        <div class="form-group">
+                            <label>Cơ chế lấy file đính kèm:</label>
+                            <div class="radio-toggle-group">
+                                <label class="radio-option">
+                                    <input type="radio" name="form-file-mode" value="fixed" checked>
+                                    <span>File cố định tải lên</span>
+                                </label>
+                                <label class="radio-option">
+                                    <input type="radio" name="form-file-mode" value="directory">
+                                    <span>🔄 Tự bốc file mới nhất trong thư mục</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Khối file cố định -->
+                        <div class="form-group" id="form-file-fixed-block">
+                            <label for="form-file">Tải lên file đính kèm:</label>
+                            <input type="file" id="form-file" class="form-control">
+                            <div id="existing-file-info" style="display: none;" class="existing-file-badge">
+                                📎 File hiện tại: <b id="existing-file-name"></b>
+                            </div>
+                        </div>
+
+                        <!-- Khối bốc file mới nhất trong thư mục -->
+                        <div class="form-group" id="form-file-dir-block" style="display: none;">
+                            <label for="form-watch-dir">Đường dẫn thư mục chứa tài liệu: <span class="required">*</span></label>
+                            <div class="input-with-btn">
+                                <input type="text" id="form-watch-dir" class="form-control" placeholder="Ví dụ: C:\Users\ADMIN\Documents\BaoCao">
+                                <button type="button" class="btn btn-secondary" id="btn-browse-form-dir">🔍 Quét thử</button>
+                            </div>
+                            <small class="form-hint">Đến giờ hẹn, hệ thống sẽ tự động tìm và gửi file mới nhất vừa tạo trong thư mục này</small>
+
+                            <div style="margin-top: 10px;">
+                                <label for="form-file-pattern">Định dạng file cần lấy:</label>
+                                <input type="text" id="form-file-pattern" class="form-control" value="*.xlsx" placeholder="Ví dụ: *.xlsx, *.pdf, *.png hoặc *.*">
+                            </div>
+                            <div id="form-dir-preview" class="dir-preview-result"></div>
+                        </div>
+
+                        <!-- CƠ CHẾ AN TOÀN & BÁO CÁO -->
+                        <div class="divider"></div>
+                        <div class="form-row">
+                            <div class="form-group col-half">
+                                <label for="form-safe-countdown">🛡 Đếm lùi xem trước an toàn:</label>
+                                <select id="form-safe-countdown" class="form-control">
+                                    <option value="0">Gửi ngay lập tức (0s)</option>
+                                    <option value="15">Đếm lùi 15 giây</option>
+                                    <option value="30">Đếm lùi 30 giây (Khuyên dùng)</option>
+                                    <option value="60">Đếm lùi 60 giây</option>
+                                </select>
+                                <small class="form-hint">Cho bạn thời gian rà soát hoặc bấm hoãn trước khi gửi</small>
+                            </div>
+
+                            <div class="form-group col-half form-checkbox-group" style="justify-content: center;">
+                                <label class="checkbox-label" style="font-weight: 700; color: #1e293b;">
+                                    <input type="checkbox" id="form-notify-tele" checked>
+                                    <span>📱 Báo kết quả về điện thoại (Telegram)</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="modal-cancel-btn">Hủy bỏ</button>
+                    <button type="submit" class="btn btn-primary" id="modal-submit-btn">Lưu Tác Vụ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- HỘP THOẠI XEM TRƯỚC AN TOÀN (SMART PREVIEW & COUNTDOWN) -->
+    <div class="preview-backdrop" id="preview-modal" style="display: none;">
+        <div class="preview-dialog">
+            <div class="preview-header">
+                <div class="preview-badge">🛡 ĐẾM LÙI XEM TRƯỚC AN TOÀN</div>
+                <div class="countdown-circle" id="preview-countdown-number">30</div>
+            </div>
+            <div class="preview-body">
+                <h3 id="preview-task-title">Chuẩn bị gửi tài liệu</h3>
+                <p id="preview-task-desc">Ứng dụng sẽ tự động gửi trong giây lát nếu bạn không can thiệp.</p>
+                <div class="preview-info-box">
+                    <div><b>👤 Người nhận:</b> <span id="preview-recipient">--</span></div>
+                    <div><b>📎 File chuẩn bị gửi:</b> <span id="preview-file">--</span></div>
+                </div>
+            </div>
+            <div class="preview-footer">
+                <button class="btn btn-success" id="btn-preview-send-now">🚀 Gửi Ngay Bây Giờ</button>
+                <button class="btn btn-warning" id="btn-preview-postpone">⏸ Hoãn 15 Phút</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alert Banner thông báo nhắc việc -->
+    <div class="alert-banner" id="due-alert-banner" style="display: none;">
+        <div class="alert-content">
+            <div class="alert-icon">🔔</div>
+            <div class="alert-text">
+                <h4 id="alert-task-title">Đã đến giờ nhắc việc!</h4>
+                <p id="alert-task-desc">Nội dung công việc...</p>
+            </div>
+        </div>
+        <div class="alert-actions">
+            <button class="btn btn-sm btn-light" id="btn-dismiss-alert">Đã rõ</button>
+        </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
